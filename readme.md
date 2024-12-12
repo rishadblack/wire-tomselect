@@ -1,57 +1,160 @@
-# WireTomselect
+Here is an example of GitHub usage documentation for your `SearchComponent` package, assuming you are sharing it as a public repository.
 
-[![Latest Version on Packagist][ico-version]][link-packagist]
-[![Total Downloads][ico-downloads]][link-downloads]
-[![Build Status][ico-travis]][link-travis]
-[![StyleCI][ico-styleci]][link-styleci]
+---
 
-This is where your description should go. Take a look at [contributing.md](contributing.md) to see a to do list.
+# WireTomSelect - Laravel Livewire Searchable Dropdown
+
+**WireTomSelect** is a reusable, customizable Livewire component designed for implementing searchable dropdowns with minimal effort in Laravel projects. It provides a clean interface to query data, map results, and handle user selections.
+
+## Features
+
+- Easy integration with Laravel Livewire.
+- Configurable search, label, and value fields.
+- Supports single and multiple selections.
+- Customizable query logic.
+- Placeholder, disabled state, and max options settings.
+
+---
 
 ## Installation
 
-Via Composer
+### Step 1: Install the Package
+
+You can install the package via Composer:
 
 ```bash
 composer require rishadblack/wire-tomselect
 ```
 
-## Usage
+### Step 2: Publish the Views
 
-## Change log
-
-Please see the [changelog](changelog.md) for more information on what has changed recently.
-
-## Testing
+If you need to customize the default views, you can publish them:
 
 ```bash
-composer test
+php artisan vendor:publish --tag=wire-tomselect-views
 ```
+
+This will publish the `wire-tomselect::search` view to your `resources/views/vendor` directory.
+
+---
+
+## Usage
+
+### Step 1: Extend the `SearchComponent`
+
+To create your searchable dropdown component, extend the abstract `SearchComponent` class and define the required `builder` and `configure` methods.
+
+```php
+namespace App\Http\Livewire;
+
+use Rishadblack\WireTomselect\SearchComponent;
+use App\Models\User;
+
+class UserSearch extends SearchComponent
+{
+    public function builder(): Builder
+    {
+        return User::query(); // Base query for fetching data
+    }
+
+    public function configure(): void
+    {
+        $this->isSearchable();
+        $this->setSearchField(['name', 'email']); // Fields to search in
+    }
+}
+```
+
+### Step 2: Use the Component in a Blade File
+
+Include your component in a Blade file as follows:
+
+```blade
+<livewire:user-search />
+```
+
+---
+
+## Customization
+
+### Configure Fields
+
+- **Value Field**: Field used for the dropdown value (default: `id`).
+- **Label Field**: Field used for the dropdown label (default: `name`).
+
+Set these fields in your `configure` method:
+
+```php
+$this->setValueField('id');
+$this->setLabelField('name');
+```
+
+### Search Fields
+
+Specify the fields for performing searches using:
+
+```php
+$this->setSearchField(['name', 'email']);
+```
+
+### Maximum Options
+
+Set the maximum number of options to display using:
+
+```php
+$this->setMaxOptions(10);
+```
+
+---
+
+## Example
+
+Here’s a complete example for creating a searchable product dropdown:
+
+```php
+namespace App\Http\Livewire;
+
+use Rishadblack\WireTomselect\SearchComponent;
+use App\Models\Product;
+
+class ProductSearch extends SearchComponent
+{
+    public function builder(): Builder
+    {
+        return Product::query();
+    }
+
+    public function configure(): void
+    {
+        $this->isSearchable();
+        $this->setSearchField(['name', 'sku']);
+        $this->setMaxOptions(15);
+    }
+}
+```
+
+In your Blade template:
+
+```blade
+<livewire:product-search />
+```
+
+---
 
 ## Contributing
 
-Please see [contributing.md](contributing.md) for details and a todolist.
+Contributions are welcome! Please follow these steps:
 
-## Security
+1. Fork the repository.
+2. Create a feature branch.
+3. Submit a pull request with a detailed description of your changes.
 
-If you discover any security related issues, please email rishad.black@gmail.com instead of using the issue tracker.
-
-## Credits
-
-- [S M Rishad][link-author]
-- [All Contributors][link-contributors]
+---
 
 ## License
 
-MIT. Please see the [license file](license.md) for more information.
+This package is open-sourced software licensed under the [MIT license](LICENSE).
 
-[ico-version]: https://img.shields.io/packagist/v/rishadblack/wire-tomselect.svg?style=flat-square
-[ico-downloads]: https://img.shields.io/packagist/dt/rishadblack/wire-tomselect.svg?style=flat-square
-[ico-travis]: https://img.shields.io/travis/rishadblack/wire-tomselect/master.svg?style=flat-square
-[ico-styleci]: https://styleci.io/repos/12345678/shield
+---
 
-[link-packagist]: https://packagist.org/packages/rishadblack/wire-tomselect
-[link-downloads]: https://packagist.org/packages/rishadblack/wire-tomselect
-[link-travis]: https://travis-ci.org/rishadblack/wire-tomselect
-[link-styleci]: https://styleci.io/repos/12345678
-[link-author]: https://github.com/rishadblack
-[link-contributors]: ../../contributors
+Feel free to adapt this documentation based on your repository's specific needs!
