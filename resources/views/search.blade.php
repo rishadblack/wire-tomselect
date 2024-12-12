@@ -19,9 +19,9 @@
         $errorSpan{{ $select_id }} = document.getElementById("{{ $select_id }}_error_msg");
 
         $selectTom{{ $select_id }} = new TomSelect(document.getElementById("{{ $select_id }}_select"), {
-            valueField: $wire.getValueField(),
-            labelField: $wire.getLabelField(),
-            searchField: $wire.getSearchField(),
+            valueField: $wire.value_field,
+            labelField: $wire.label_field,
+            searchField: $wire.search_field,
             maxOptions: $wire.max_options,
             loadThrottle: 800,
             options: $wire.data,
