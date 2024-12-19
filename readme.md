@@ -1,7 +1,3 @@
-Here is an example of GitHub usage documentation for your `SearchComponent` package, assuming you are sharing it as a public repository.
-
----
-
 # WireTomSelect - Laravel Livewire Searchable Dropdown
 
 **WireTomSelect** is a reusable, customizable Livewire component designed for implementing searchable dropdowns with minimal effort in Laravel projects. It provides a clean interface to query data, map results, and handle user selections.
