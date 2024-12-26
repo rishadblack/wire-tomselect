@@ -30,6 +30,9 @@ abstract class SearchComponent extends Component
     public $value_field = 'id'; // The field to use as the value
     public $label_field = 'name'; // The field to use as the label
     public $search_field = ['name']; // Fields to use for search queries
+    public $create_load_component;
+    public $create_load = [];
+    public $create_event;
 
     /**
      * Abstract method for building the query.
@@ -218,5 +221,11 @@ abstract class SearchComponent extends Component
     {
         $this->baseMap(); // Load the initial data
         $this->baseSelectId(); // Generate the select ID
+
+        if ($this->create_load_component) {
+            $this->create_load = explode(',', $this->create_load_component);
+        } else {
+            $this->create_load = [];
+        }
     }
 }

@@ -13,13 +13,11 @@
         </div>
     </div>
 </div>
-
 @script
     <script>
         const errorSpan = document.getElementById("{{ $select_id }}_error_msg");
         const listeners = [];
-
-        const selectTom = new TomSelect(document.getElementById("{{ $select_id }}_select"), {
+        let tomSelectSettings = {
             valueField: $wire.value_field,
             labelField: $wire.label_field,
             searchField: $wire.search_field,
@@ -47,7 +45,30 @@
                     return `<div>${ escape(item.name) }</div>`;
                 }
             }
-        });
+        };
+
+        if ($wire.create_load_component || $wire.create_event) {
+            tomSelectSettings.create = (input) => {
+                if ($wire.create_event) {
+                    $wire.$dispatch($wire.create_event, {
+                        text: input
+                    });
+                    return false;
+                }
+
+                $wire.$dispatch($wire.create_event ?? 'loadComponent', {
+                    action: '{{ isset($create_load[0]) ? $create_load[0] : '' }}',
+                    component: '{{ isset($create_load[1]) ? $create_load[1] : '' }}',
+                    data: {
+                        text: input,
+                        extra: $wire.create_load
+                    }
+                });
+                return false;
+            };
+        }
+
+        const selectTom = new TomSelect(document.getElementById("{{ $select_id }}_select"), tomSelectSettings);
 
 
         selectTom.on('change', () => {
@@ -136,7 +157,10 @@
             el,
             component
         }) => {
-            listeners.forEach(unregister => unregister());
+            const selectId = document.getElementById('{{ $select_id }}_select');
+            if (!selectId) {
+                listeners.forEach(unregister => unregister());
+            }
         });
     </script>
 @endscript
