@@ -16,9 +16,10 @@
 
 @script
     <script>
-        $errorSpan{{ $select_id }} = document.getElementById("{{ $select_id }}_error_msg");
+        const errorSpan = document.getElementById("{{ $select_id }}_error_msg");
+        const listeners = [];
 
-        $selectTom{{ $select_id }} = new TomSelect(document.getElementById("{{ $select_id }}_select"), {
+        const selectTom = new TomSelect(document.getElementById("{{ $select_id }}_select"), {
             valueField: $wire.value_field,
             labelField: $wire.label_field,
             searchField: $wire.search_field,
@@ -48,78 +49,94 @@
             }
         });
 
-        $selectTom{{ $select_id }}.on('change', () => {
-            $errorSpan{{ $select_id }}.style.display = "none";
-        });
 
-        Livewire.on('{{ $select_id }}_set_option', (event) => {
-            if (typeof event[0] === "undefined") {
-                $selectTom{{ $select_id }}.clear();
-                $selectTom{{ $select_id }}.clearOptions();
-                $selectTom{{ $select_id }}.addOption($wire.data);
-            } else {
-                $selectTom{{ $select_id }}.clear();
-                $selectTom{{ $select_id }}.clearOptions();
-                $selectTom{{ $select_id }}.addOption(event[0]);
-            }
+        selectTom.on('change', () => {
+            errorSpan.style.display = "none";
         })
 
-        Livewire.on('{{ $select_id }}_set_value', (event) => {
-            if (typeof event[0] === "undefined") {
-                $selectTom{{ $select_id }}.clear();
-                $selectTom{{ $select_id }}.setValue($wire.value);
-                $errorSpan{{ $select_id }}.style.display = "none";
-            } else {
-                $selectTom{{ $select_id }}.clear();
-                $selectTom{{ $select_id }}.setValue(event[0]);
-                $errorSpan{{ $select_id }}.style.display = "none";
-            }
-        })
-
-        Livewire.on('tom_select_set_value', (event) => {
-            if (typeof event[0]['{{ $name }}'] != "undefined") {
-                if (typeof event[0]['{{ $name }}']['value'] != "undefined") {
-                    $selectTom{{ $select_id }}.clear();
-                    $errorSpan{{ $select_id }}.style.display = "none";
-                    if (typeof event[0]['{{ $name }}']['options'] != "undefined") {
-                        $selectTom{{ $select_id }}.clearOptions();
-                        $selectTom{{ $select_id }}.addOption(event[0]['{{ $name }}'][
-                            'options'
-                        ]);
-                    }
-                    $selectTom{{ $select_id }}.setValue(event[0]['{{ $name }}']['value']);
-
+        listeners.push(
+            Livewire.on('{{ $select_id }}_set_option', (event) => {
+                if (typeof event[0] === "undefined") {
+                    selectTom.clear();
+                    selectTom.clearOptions();
+                    selectTom.addOption($wire.data);
                 } else {
-                    $selectTom{{ $select_id }}.clear();
-                    $selectTom{{ $select_id }}.setValue(event[0]['{{ $name }}']);
-                    $errorSpan{{ $select_id }}.style.display = "none";
+                    selectTom.clear();
+                    selectTom.clearOptions();
+                    selectTom.addOption(event[0]);
                 }
-            }
-        })
+            }))
 
-        Livewire.on('{{ $select_id }}_set_reset', () => {
-            $selectTom{{ $select_id }}.clear();
-            $selectTom{{ $select_id }}.setValue($wire.value);
-            $errorSpan{{ $select_id }}.style.display = "none";
-        })
+        listeners.push(
+            Livewire.on('{{ $select_id }}_set_value', (event) => {
+                if (typeof event[0] === "undefined") {
+                    selectTom.clear();
+                    selectTom.setValue($wire.value);
+                    errorSpan.style.display = "none";
+                } else {
+                    selectTom.clear();
+                    selectTom.setValue(event[0]);
+                    errorSpan.style.display = "none";
+                }
+            }))
 
-        Livewire.on('tom_select_set_reset', () => {
-            $selectTom{{ $select_id }}.clear();
-            $selectTom{{ $select_id }}.setValue(null);
-            $errorSpan{{ $select_id }}.style.display = "none";
-        })
+        listeners.push(
+            Livewire.on('tom_select_set_value', (event) => {
+                if (typeof event[0]['{{ $name }}'] != "undefined") {
+                    if (typeof event[0]['{{ $name }}']['value'] != "undefined") {
+                        selectTom.clear();
+                        errorSpan.style.display = "none";
+                        if (typeof event[0]['{{ $name }}']['options'] != "undefined") {
+                            selectTom.clearOptions();
+                            selectTom.addOption(event[0]['{{ $name }}'][
+                                'options'
+                            ]);
+                        }
+                        selectTom.setValue(event[0]['{{ $name }}']['value']);
 
-        Livewire.on('alert', (event) => {
-            $errorDatas = event.data.validation_errors;
-
-            if ($errorDatas) {
-                Object.keys($errorDatas).forEach(key => {
-                    if (key === $wire.name) {
-                        $errorSpan{{ $select_id }}.style.display = "inline";
-                        $errorSpan{{ $select_id }}.innerText = $errorDatas[key][0];
+                    } else {
+                        selectTom.clear();
+                        selectTom.setValue(event[0]['{{ $name }}']);
+                        errorSpan.style.display = "none";
                     }
-                });
-            }
-        })
+                }
+            }))
+
+        listeners.push(
+            Livewire.on('{{ $select_id }}_set_reset', () => {
+                selectTom.clear();
+                selectTom.setValue($wire.value);
+                errorSpan.style.display = "none";
+            }))
+
+        listeners.push(
+            Livewire.on('tom_select_set_reset', () => {
+                selectTom.clear();
+                selectTom.setValue(null);
+                errorSpan.style.display = "none";
+            }))
+
+        listeners.push(
+            Livewire.on('alert', (event) => {
+
+                if (event.type == 'error') {
+                    const errorDatas = event.data.validation_errors;
+                    if (errorDatas) {
+                        Object.keys(errorDatas).forEach(key => {
+                            if (key === $wire.name) {
+                                errorSpan.style.display = "inline";
+                                errorSpan.innerText = errorDatas[key][0];
+                            }
+                        });
+                    }
+                }
+            }))
+
+        Livewire.hook("morph.removed", ({
+            el,
+            component
+        }) => {
+            listeners.forEach(unregister => unregister());
+        });
     </script>
 @endscript
