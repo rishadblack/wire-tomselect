@@ -2,9 +2,9 @@
 
 namespace Rishadblack\WireTomselect\Traits;
 
-trait WithWireTomselect
+trait WithTomselect
 {
-    public function mountWithWireTomselect($data = [])
+    public function mountWithTomselect($data = [])
     {
         if (isset($data['data']) && isset($data['data']['text']) && !empty($data['data']['text'])) {
             session()->put('tom_select_remote', $data['data']);
