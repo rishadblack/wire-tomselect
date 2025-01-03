@@ -61,6 +61,7 @@
                     component: '{{ isset($create_load[1]) ? $create_load[1] : '' }}',
                     data: {
                         text: input,
+                        field_name: '{{ $name }}',
                         extra: $wire.create_load
                     }
                 });
@@ -108,7 +109,6 @@
                         selectTom.clear();
                         errorSpan.style.display = "none";
                         if (typeof event[0]['{{ $name }}']['options'] != "undefined") {
-                            selectTom.clearOptions();
                             selectTom.addOption(event[0]['{{ $name }}'][
                                 'options'
                             ]);
