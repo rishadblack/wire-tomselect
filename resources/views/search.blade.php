@@ -162,5 +162,41 @@
                 listeners.forEach(unregister => unregister());
             }
         });
+
+        let initialized = false;
+
+        Livewire.hook('component.init', ({
+            component,
+            cleanup
+        }) => {
+            if (!initialized) {
+                // Ensure window.tom_select_set_value exists and is valid
+                if (window.tom_select_set_value && typeof window.tom_select_set_value['{{ $name }}'] !==
+                    "undefined") {
+                    const tomValue = window.tom_select_set_value['{{ $name }}'];
+
+                    if (tomValue && typeof tomValue['value'] !== "undefined") {
+                        selectTom.clear();
+                        errorSpan.style.display = "none";
+
+                        if (typeof tomValue['options'] !== "undefined") {
+                            selectTom.clearOptions();
+                            selectTom.addOption(tomValue['options']);
+                        }
+
+                        selectTom.setValue(tomValue['value']);
+                    } else if (tomValue) {
+                        selectTom.clear();
+                        selectTom.setValue(tomValue);
+                        errorSpan.style.display = "none";
+                    }
+
+                    // Clear processed data for '{{ $name }}'
+                    window.tom_select_set_value['{{ $name }}'] = null;
+                }
+
+                initialized = true; // Prevent further executions
+            }
+        });
     </script>
 @endscript
