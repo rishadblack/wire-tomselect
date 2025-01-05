@@ -131,10 +131,23 @@
             }))
 
         listeners.push(
-            Livewire.on('tom_select_set_reset', () => {
-                selectTom.clear();
-                selectTom.setValue(null);
-                errorSpan.style.display = "none";
+            Livewire.on('tom_select_set_reset', (event) => {
+                // Check if event[0] is an array
+                if (Array.isArray(event[0])) {
+                    if (event[0].length === 0) {
+                        // Clear all fields if event[0] is an empty array
+                        console.log("Empty array detected. Clearing all fields...");
+                        selectTom.clear();
+                        selectTom.setValue(null);
+                        errorSpan.style.display = "none";
+                    } else if (event[0].includes('{{ $name }}')) {
+                        // Perform logic for specific '{{ $name }}' key
+                        console.log(`Key '{{ $name }}' found. Clearing field...`);
+                        selectTom.clear();
+                        selectTom.setValue(null);
+                        errorSpan.style.display = "none";
+                    }
+                }
             }))
 
         listeners.push(
