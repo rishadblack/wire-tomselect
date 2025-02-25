@@ -1,12 +1,14 @@
 <?php
-
 namespace Rishadblack\WireTomselect;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Str;
 use Livewire\Attributes\Modelable;
+use Livewire\Attributes\Reactive;
 use Livewire\Component;
+use ReflectionClass;
+use Rishadblack\WireTomselect\Traits\ComponentHelpers;
 
 /**
  * Abstract SearchComponent for use in Livewire components.
@@ -14,21 +16,23 @@ use Livewire\Component;
  */
 abstract class SearchComponent extends Component
 {
+    use ComponentHelpers;
+
     #[Modelable]
     public $value; // Bound model property for selected value
 
-    public $data; // Holds the mapped data to be displayed
-    public $name; // Component's name
-    public $select_id; // Unique ID for the select input
-    public $label; // Label for the select field
-    public $search_query; // Current search query
-    public $placeholder; // Placeholder text for the select input
-    public $disabled; // Boolean to control input's disabled state
-    public $searchable; // Boolean to enable/disable searching
-    public $max_options = 20; // Maximum number of options to display
-    public $multiple; // Boolean for multiple selection
-    public $value_field = 'id'; // The field to use as the value
-    public $label_field = 'name'; // The field to use as the label
+    public $data;                    // Holds the mapped data to be displayed
+    public $name;                    // Component's name
+    public $select_id;               // Unique ID for the select input
+    public $label;                   // Label for the select field
+    public $search_query;            // Current search query
+    public $placeholder;             // Placeholder text for the select input
+    public $disabled;                // Boolean to control input's disabled state
+    public $searchable;              // Boolean to enable/disable searching
+    public $max_options = 20;        // Maximum number of options to display
+    public $multiple;                // Boolean for multiple selection
+    public $value_field = 'id';      // The field to use as the value
+    public $label_field = 'name';    // The field to use as the label
     public $search_field = ['name']; // Fields to use for search queries
     public $create_load_component;
     public $create_load = [];
@@ -62,16 +66,6 @@ abstract class SearchComponent extends Component
     }
 
     /**
-     * Render the component view.
-     * @return \Illuminate\View\View
-     */
-    public function render()
-    {
-        $this->configure();
-        return view('wire-tomselect::search');
-    }
-
-    /**
      * Generate a unique select ID by replacing dots with underscores in the name.
      */
     public function baseSelectId(): void
@@ -95,7 +89,6 @@ abstract class SearchComponent extends Component
     public function setMaxOptions(int $max = null): void
     {
         $this->max_options = $max ?: $this->max_options; // Default to current value if null
-        $this->max_options = max(1, $this->max_options); // Ensure the max options is at least 1
     }
 
     /**
@@ -112,13 +105,19 @@ abstract class SearchComponent extends Component
      * @param string|null $search
      * @return array
      */
-    public function baseMap(string $search = null): array
+    public function baseMap(string $search = null, $loadId = null): array
     {
-        $query = $this->searchable && !empty($search) ? $this->search($this->baseBuilder(), $search) : $this->baseBuilder();
+        $this->configure();
+
+        $query = $this->searchable && ! empty($search) ? $this->search($this->baseBuilder(), $search) : $this->baseBuilder();
 
         // Prevent overriding the limit if it's already applied
-        if (!$query->getQuery()->limit) {
+        if (! $query->getQuery()->limit && $this->searchable) {
             $query->limit($this->max_options);
+        }
+
+        if ($loadId) {
+            $query->where('id', $loadId);
         }
 
         $this->data = $this->map($query->get());
@@ -154,72 +153,12 @@ abstract class SearchComponent extends Component
     }
 
     /**
-     * Get the value field name.
-     * @return string
-     */
-    public function getValueField(): string
-    {
-        return $this->value_field;
-    }
-
-    /**
-     * Set the value field name.
-     * @param string|null $name
-     * @return self
-     */
-    public function setValueField(string $name = null): self
-    {
-        $this->value_field = $name;
-        return $this;
-    }
-
-    /**
-     * Get the label field name.
-     * @return string
-     */
-    public function getLabelField(): string
-    {
-        return $this->label_field;
-    }
-
-    /**
-     * Set the label field name.
-     * @param string|null $name
-     * @return self
-     */
-    public function setLabelField(string $name = null): self
-    {
-        $this->label_field = $name;
-        return $this;
-    }
-
-    /**
-     * Get the fields used for searching.
-     * @return array
-     */
-    public function getSearchField(): array
-    {
-        return $this->search_field;
-    }
-
-    /**
-     * Set the fields to be used for searching.
-     * @param array $fields
-     * @return self
-     */
-    public function setSearchField(array $fields = []): self
-    {
-        $this->search_field = $fields;
-        return $this;
-    }
-
-    /**
      * Component mount method for initialization.
      * Preloads data and generates the select ID.
      */
     public function mount()
     {
-        $this->baseMap(); // Load the initial data
+        $this->baseMap();      // Load the initial data
         $this->baseSelectId(); // Generate the select ID
 
         if ($this->create_load_component) {
@@ -228,4 +167,42 @@ abstract class SearchComponent extends Component
             $this->create_load = [];
         }
     }
+
+    /**
+     * Render the component view.
+     * @return \Illuminate\View\View
+     */
+    public function render()
+    {
+        $this->configure();
+
+        return view('wire-tomselect::search', [
+            'reactive_props' => $this->getReactiveProps(),
+        ]);
+    }
+
+    public function getReactiveProps(): array
+    {
+        $data = collect((new ReflectionClass($this))->getProperties())
+            ->filter(function ($prop) {
+                // Check if the property has ONLY the #[Reactive] attribute
+                foreach ($prop->getAttributes() as $attribute) {
+                    if ($attribute->getName() === Reactive::class) {
+                        return true; // Only include properties marked as #[Reactive]
+                    }
+                }
+                return false;
+            })
+            ->map(fn($prop) => $prop->getName())
+            ->values()
+            ->toArray();
+
+        return $data;
+    }
+
+    public function baseMapWithId($id): array
+    {
+        return $this->baseMap(null, $id);
+    }
+
 }

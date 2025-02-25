@@ -1,43 +1,65 @@
 <?php
-
 namespace Rishadblack\WireTomselect\Traits;
 
 trait ComponentHelpers
 {
-    protected $value_field;
-    protected $label_field;
-    protected $search_field;
-
-    public function setValueField(string $value_field)
-    {
-        $this->value_field = $value_field;
-        return $this;
-    }
-
+    /**
+     * Get the value field name.
+     * @return string
+     */
     public function getValueField(): string
     {
-        return $this->value_field ?? 'id';
+        return $this->value_field;
     }
 
-    public function setLabelField(string $label_field)
+    /**
+     * Set the value field name.
+     * @param string|null $name
+     * @return self
+     */
+    public function setValueField(string $name = null): self
     {
-        $this->label_field = $label_field;
+        $this->value_field = $name;
         return $this;
     }
 
+    /**
+     * Get the label field name.
+     * @return string
+     */
     public function getLabelField(): string
     {
-        return $this->label_field ?? 'name';
+        return $this->label_field;
     }
 
-    public function setSearchField(array $search_field)
+    /**
+     * Set the label field name.
+     * @param string|null $name
+     * @return self
+     */
+    public function setLabelField(string $name = null): self
     {
-        $this->search_field = $search_field;
+        $this->label_field = $name;
         return $this;
     }
 
+    /**
+     * Get the fields used for searching.
+     * @return array
+     */
     public function getSearchField(): array
     {
-        return count($this->search_field) > 0 ? $this->search_field : ['id', 'name'];
+        return $this->search_field;
+    }
+
+    /**
+     * Set the fields to be used for searching.
+     * @param array $fields
+     * @return self
+     */
+    public function setSearchField(array $fields = []): self
+    {
+        $this->search_field = $fields;
+        return $this;
     }
 }
