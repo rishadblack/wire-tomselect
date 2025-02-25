@@ -258,6 +258,7 @@
 
                 if (!newValue) {
                     // console.warn("New value is empty. Skipping selection.");
+                    selectTom.clear(true);
                     return;
                 }
 
