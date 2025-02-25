@@ -7,8 +7,8 @@
                 class="{{ $select_id }}_class"
                 @if ($disabled == 'true') style="background-color: rgb(184, 35, 35); color:#000000; border: 1px solid #e8f2ff; padding: 0.3rem 0.75rem;"
             disabled @endif
-                placeholder="{{ $placeholder ?? 'Type to select ' . $label }}"
-                {{ $multiple ? 'multiple' : '' }}></select>
+                placeholder="{{ $placeholder ?? 'Type to select ' . $label }}" {{ $multiple ? 'multiple' : '' }}>
+            </select>
             <span class="invalid-feedback error_msg" id="{{ $select_id }}_error_msg"></span>
         </div>
     </div>
@@ -71,6 +71,9 @@
 
         const selectTom = new TomSelect(document.getElementById("{{ $select_id }}_select"), tomSelectSettings);
 
+        if ($wire.value) {
+            selectTom.setValue($wire.value);
+        }
 
         selectTom.on('change', () => {
             errorSpan.style.display = "none";
@@ -136,13 +139,13 @@
                 if (Array.isArray(event[0])) {
                     if (event[0].length === 0) {
                         // Clear all fields if event[0] is an empty array
-                        console.log("Empty array detected. Clearing all fields...");
+                        // console.log("Empty array detected. Clearing all fields...");
                         selectTom.clear();
                         selectTom.setValue(null);
                         errorSpan.style.display = "none";
                     } else if (event[0].includes('{{ $name }}')) {
                         // Perform logic for specific '{{ $name }}' key
-                        console.log(`Key '{{ $name }}' found. Clearing field...`);
+                        // console.log(`Key '{{ $name }}' found. Clearing field...`);
                         selectTom.clear();
                         selectTom.setValue(null);
                         errorSpan.style.display = "none";
@@ -152,19 +155,24 @@
 
         listeners.push(
             Livewire.on('alert', (event) => {
-
-                if (event.type == 'error') {
+                // Check if event.type is 'error' and if validation errors exist
+                if (event.type === 'error' && event.data && event.data.validation_errors) {
                     const errorDatas = event.data.validation_errors;
+
+                    // Loop through the validation errors and display them
                     if (errorDatas) {
                         Object.keys(errorDatas).forEach(key => {
                             if (key === $wire.name) {
+                                // Show the error message in the span
                                 errorSpan.style.display = "inline";
                                 errorSpan.innerText = errorDatas[key][0];
                             }
                         });
                     }
                 }
-            }))
+            })
+        );
+
 
         Livewire.hook("morph.removed", ({
             el,
@@ -254,7 +262,7 @@
 
             // Watch for value changes in Livewire and auto-select it
             $wire.$watch('value', async function(newValue) {
-                console.log("Livewire value updated:", newValue);
+                // console.log("Livewire value updated:", newValue);
 
                 if (!newValue) {
                     // console.warn("New value is empty. Skipping selection.");

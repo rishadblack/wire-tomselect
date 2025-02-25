@@ -59,8 +59,8 @@ abstract class SearchComponent extends Component
     {
         return $collection->map(function ($item) {
             return [
-                $this->getValueField() => $item->{$this->getValueField()}, // Default value mapping
-                $this->getLabelField() => $item->{$this->getLabelField()}, // Default label mapping
+                'id' => $item->{$this->getValueField()},   // Default value mapping
+                'name' => $item->{$this->getLabelField()}, // Default label mapping
             ];
         })->toArray();
     }
@@ -109,18 +109,47 @@ abstract class SearchComponent extends Component
     {
         $this->configure();
 
-        $query = $this->searchable && ! empty($search) ? $this->search($this->baseBuilder(), $search) : $this->baseBuilder();
+        // Start by getting the base query for all records
+        $query = $this->baseBuilder();
 
-        // Prevent overriding the limit if it's already applied
+        // Apply search filtering if enabled
+        if ($this->searchable && ! empty($search)) {
+            $query = $this->search($query, $search);
+        }
+
+        // Apply the limit if it's not already set and search is enabled
         if (! $query->getQuery()->limit && $this->searchable) {
             $query->limit($this->max_options);
         }
 
+        // Fetch all the data
+        $allData = $query->get();
+
+        // If loadId is provided, check if it exists in the fetched data
         if ($loadId) {
-            $query->where('id', $loadId);
+            // Check if the loadId exists in the already fetched data
+            $loadData = $allData->where($this->getValueField(), $loadId)->first();
+
+            // If the loadId exists in the already fetched data, return the data as is
+            if (! $loadData) {
+
+                // If the loadId does not exist, fetch it separately and merge
+                $loadData = $this->baseBuilder()->where($this->getValueField(), $loadId)->first();
+
+                // If the specific loadId exists, merge it with the fetched data
+                if ($loadData) {
+                    $allData->push($loadData);
+                    $this->max_options = $this->max_options + 1;
+                }
+                // Ensure the result is an Eloquent collection before passing it to map
+                if (! $allData instanceof \Illuminate\Database\Eloquent\Collection) {
+                    $allData = new \Illuminate\Database\Eloquent\Collection($allData->all());
+                }
+            }
         }
 
-        $this->data = $this->map($query->get());
+        // Map the result and return
+        $this->data = $this->map($allData);
 
         return $this->data;
     }
@@ -158,7 +187,11 @@ abstract class SearchComponent extends Component
      */
     public function mount()
     {
-        $this->baseMap();      // Load the initial data
+        if ($this->value) {
+            $this->data = $this->baseMapWithId($this->value);
+        } else {
+            $this->data = $this->baseMap();
+        }                      // Load the initial data
         $this->baseSelectId(); // Generate the select ID
 
         if ($this->create_load_component) {
