@@ -37,6 +37,7 @@ abstract class SearchComponent extends Component
     public $create_load_component;
     public $create_load = [];
     public $create_event;
+    public $is_remove_button;
 
     /**
      * Abstract method for building the query.

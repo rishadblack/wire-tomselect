@@ -62,4 +62,15 @@ trait ComponentHelpers
         $this->search_field = $fields;
         return $this;
     }
+
+    /**
+     * Set the fields to be used for searching.
+     * @param array $fields
+     * @return self
+     */
+    public function showRemoveButton(): self
+    {
+        $this->is_remove_button = true;
+        return $this;
+    }
 }

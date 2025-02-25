@@ -47,6 +47,10 @@
             }
         };
 
+        if ($wire.multiple || $wire.is_remove_button) {
+            tomSelectSettings.plugins = ['remove_button'];
+        }
+
         if ($wire.create_load_component || $wire.create_event) {
             tomSelectSettings.create = (input) => {
                 if ($wire.create_event) {
