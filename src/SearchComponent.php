@@ -21,19 +21,16 @@ abstract class SearchComponent extends Component
     #[Modelable]
     public $value; // Bound model property for selected value
 
-    public $data;                    // Holds the mapped data to be displayed
-    public $name;                    // Component's name
-    public $select_id;               // Unique ID for the select input
-    public $label;                   // Label for the select field
-    public $search_query;            // Current search query
-    public $placeholder;             // Placeholder text for the select input
-    public $disabled;                // Boolean to control input's disabled state
-    public $searchable;              // Boolean to enable/disable searching
-    public $max_options = 20;        // Maximum number of options to display
-    public $multiple;                // Boolean for multiple selection
-    public $value_field = 'id';      // The field to use as the value
-    public $label_field = 'name';    // The field to use as the label
-    public $search_field = ['name']; // Fields to use for search queries
+    public $data;             // Holds the mapped data to be displayed
+    public $name;             // Component's name
+    public $select_id;        // Unique ID for the select input
+    public $label;            // Label for the select field
+    public $search_query;     // Current search query
+    public $placeholder;      // Placeholder text for the select input
+    public $disabled;         // Boolean to control input's disabled state
+    public $searchable;       // Boolean to enable/disable searching
+    public $max_options = 20; // Maximum number of options to display
+    public $multiple;         // Boolean for multiple selection
     public $create_load_component;
     public $create_load = [];
     public $create_event;
@@ -60,8 +57,8 @@ abstract class SearchComponent extends Component
     {
         return $collection->map(function ($item) {
             return [
-                'id' => $item->{$this->getValueField()},   // Default value mapping
-                'name' => $item->{$this->getLabelField()}, // Default label mapping
+                'id' => $item->{$this->getValueField(true)},   // Default value mapping
+                'name' => $item->{$this->getLabelField(true)}, // Default label mapping
             ];
         })->toArray();
     }
@@ -116,6 +113,11 @@ abstract class SearchComponent extends Component
         // Apply search filtering if enabled
         if ($this->searchable && ! empty($search)) {
             $query = $this->search($query, $search);
+        }
+
+        // Apply the order if it's not already set and search is enabled
+        if (! $query->getQuery()->orders) {
+            $query->orderBy($this->getLabelField(), 'ASC'); // Replace 'column_name' with your actual column
         }
 
         // Apply the limit if it's not already set and search is enabled

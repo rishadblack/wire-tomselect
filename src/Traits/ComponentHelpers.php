@@ -3,12 +3,20 @@ namespace Rishadblack\WireTomselect\Traits;
 
 trait ComponentHelpers
 {
+    public $value_field  = 'id';     // The field to use as the value
+    public $label_field  = 'name';   // The field to use as the label
+    public $search_field = ['name']; // Fields to use for search queries
+
     /**
      * Get the value field name.
      * @return string
      */
-    public function getValueField(): string
+    public function getValueField(bool $onlyName = false): string
     {
+        if ($onlyName) {
+            return $this->returnNameOnly($this->value_field);
+        }
+
         return $this->value_field;
     }
 
@@ -27,8 +35,12 @@ trait ComponentHelpers
      * Get the label field name.
      * @return string
      */
-    public function getLabelField(): string
+    public function getLabelField(bool $onlyName = false): string
     {
+        if ($onlyName) {
+            return $this->returnNameOnly($this->label_field);
+        }
+
         return $this->label_field;
     }
 
@@ -47,8 +59,14 @@ trait ComponentHelpers
      * Get the fields used for searching.
      * @return array
      */
-    public function getSearchField(): array
+    public function getSearchField(bool $onlyName = false): array
     {
+        if ($onlyName) {
+            return array_map(function ($field) {
+                return $this->returnNameOnly($field);
+            }, $this->search_field);
+        }
+
         return $this->search_field;
     }
 
@@ -72,5 +90,16 @@ trait ComponentHelpers
     {
         $this->is_remove_button = true;
         return $this;
+    }
+
+    public function returnNameOnly($value)
+    {
+        if (strpos($value, '.') !== false) {
+            $parts = explode('.', $value);
+            $value = end($parts);
+        }
+
+        return $value;
+
     }
 }
