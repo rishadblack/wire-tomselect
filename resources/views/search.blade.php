@@ -18,9 +18,9 @@
         const errorSpan = document.getElementById("{{ $select_id }}_error_msg");
         const listeners = [];
         let tomSelectSettings = {
-            valueField: $wire.value_field,
-            labelField: $wire.label_field,
-            searchField: $wire.search_field,
+            valueField: 'id',
+            labelField: 'name',
+            searchField: ['name'],
             maxOptions: $wire.max_options,
             loadThrottle: 800,
             options: $wire.data,
