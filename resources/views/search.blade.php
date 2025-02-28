@@ -1,10 +1,10 @@
 <div class="form-group">
-    <label class="form-label {{ $label ? '' : 'd-none' }}" @style('font-weight: bold;')>{{ $label }}
+    <label class="form-label {{ $label ? '' : 'd-none' }} {{ $label_class }}">{{ $label }}
     </label>
     <div>
         <div wire:ignore id="{{ $select_id }}_class">
             <select type="text" wire:model.change="value" id="{{ $select_id }}_select"
-                class="{{ $select_id }}_class"
+                class="{{ $select_id }}_class" {{ $class }}
                 @if ($disabled == 'true') style="background-color: rgb(184, 35, 35); color:#000000; border: 1px solid #e8f2ff; padding: 0.3rem 0.75rem;"
             disabled @endif
                 placeholder="{{ $placeholder ?? 'Type to select ' . $label }}" {{ $multiple ? 'multiple' : '' }}>
