@@ -76,6 +76,7 @@
         const selectTom = new TomSelect(document.getElementById("{{ $select_id }}_select"), tomSelectSettings);
 
         if ($wire.value) {
+            errorSpan.style.display = "none";
             selectTom.setValue($wire.value);
         }
 
@@ -267,6 +268,7 @@
             // Watch for value changes in Livewire and auto-select it
             $wire.$watch('value', async function(newValue) {
                 // console.log("Livewire value updated:", newValue);
+                errorSpan.style.display = "none";
 
                 if (!newValue) {
                     // console.warn("New value is empty. Skipping selection.");
