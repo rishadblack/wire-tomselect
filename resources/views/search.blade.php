@@ -1,4 +1,4 @@
-<div class="form-group">
+<div class="form-group" id="{{ $select_id }}_group">
     <label class="form-label {{ $label ? '' : 'd-none' }} {{ $label_class }}">{{ $label }}
     </label>
     <div>
