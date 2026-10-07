@@ -2,70 +2,82 @@
 
 namespace Rishadblack\WireTomselect\Traits;
 
+use Livewire\Attributes\Locked;
+
+/**
+ * Lets a parent (page, form or modal) component control its dropdowns.
+ */
 trait WithTomselect
 {
+    /** The dropdown that opened this component through a "create new option" flow. */
+    #[Locked]
+    public ?string $tom_select_field = null;
+
     /**
-     * Initialize the tom select component with remote data.
+     * Livewire trait hook. Receives the loadComponent payload when a dropdown
+     * opens this component to create a new option.
      *
-     * @return void
+     * @param  array{data?: array{text?: string, field_name?: string}}  $data
      */
-    public function mountWithTomselect(array $data = [])
+    public function mountWithTomselect(array $data = []): void
     {
-        if (isset($data['data']['text']) && ! empty($data['data']['text'])) {
-            session()->put('tom_select_remote', $data['data']);
+        $text = $data['data']['text'] ?? null;
 
-            if (property_exists($this, 'name')) {
-                $this->name = $data['data']['text']; // Assign the value to $name
-            }
+        if (blank($text)) {
+            return;
+        }
 
-            if (method_exists($this, 'tomSelectText')) {
-                // Dynamically call the user-defined method and pass the text data
-                $this->tomSelectText($data['data']['text']);
-            }
+        $this->tom_select_field = $data['data']['field_name'] ?? null;
+
+        if (property_exists($this, 'name')) {
+            $this->name = $text;
+        }
+
+        if (method_exists($this, 'tomSelectText')) {
+            $this->tomSelectText($text);
         }
     }
 
     /**
-     * Handle remote updates for tom select component.
+     * Select a freshly created record in the dropdown that opened this component.
+     * Returns true when no dropdown is waiting for a value.
      */
     public function tomSelectRemoteUpdate(string|int $id, string $name): bool
     {
-        $remoteData = session()->get('tom_select_remote');
-        $fieldName = $remoteData['field_name'] ?? null;
-
-        if (! $fieldName) {
-            return true; // Early exit if no field name is found
+        if (! $this->tom_select_field) {
+            return true;
         }
 
-        session()->forget('tom_select_remote');
-
         $this->tomSelectUpdate([
-            $fieldName => [
+            $this->tom_select_field => [
                 'value' => $id,
-                'options' => [
-                    'id' => $id,
-                    'name' => $name,
-                ],
+                'options' => ['id' => $id, 'name' => $name],
             ],
         ]);
+
+        $this->tom_select_field = null;
 
         return false;
     }
 
     /**
-     * Update the tom select component with given options.
+     * Set dropdown values. Keys are dropdown names; values are either a plain value
+     * or ['value' => ..., 'options' => ['id' => ..., 'name' => ...]].
+     *
+     * @param  array<string, mixed>  $fields
      */
-    public function tomSelectUpdate(array $options): void
+    public function tomSelectUpdate(array $fields): void
     {
-        $this->dispatch('tom_select_set_value', $options);
+        $this->dispatch('tom_select_set_value', fields: $fields);
     }
 
     /**
-     * Reset the tom select component for specified fields.
+     * Clear the given dropdowns, or every dropdown when called without arguments.
+     *
+     * @param  array<int, string>|string  $fields
      */
-    public function tomSelectReset(array|string $options = []): void
+    public function tomSelectReset(array|string $fields = []): void
     {
-        $options = is_array($options) ? $options : [$options]; // Normalize to an array
-        $this->dispatch('tom_select_set_reset', $options);
+        $this->dispatch('tom_select_set_reset', fields: array_values((array) $fields));
     }
 }

@@ -1,156 +1,229 @@
-# WireTomSelect - Laravel Livewire Searchable Dropdown
+# WireTomSelect
 
-**WireTomSelect** is a reusable, customizable Livewire component designed for implementing searchable dropdowns with minimal effort in Laravel projects. It provides a clean interface to query data, map results, and handle user selections.
+Searchable Livewire dropdowns backed by [Tom Select](https://tom-select.js.org). You write a small PHP class that describes the Eloquent query; the package renders the `<select>`, runs remote search through Livewire, keeps the selection in sync with `wire:model`, and wires the browser side with a single Alpine component.
 
-## Features
+## Requirements
 
-- Easy integration with Laravel Livewire.
-- Configurable search, label, and value fields.
-- Supports single and multiple selections.
-- Customizable query logic.
-- Placeholder, disabled state, and max options settings.
-
----
+- PHP 8.3+
+- Laravel 11, 12 or 13
+- Livewire 3 or 4 (Alpine is bundled with Livewire)
+- `tom-select` installed through npm
 
 ## Installation
 
-### Step 1: Install the Package
-
-You can install the package via Composer:
-
 ```bash
 composer require rishadblack/wire-tomselect
+npm install tom-select
 ```
 
-### Step 2: Publish the Views
+Load the package script before Livewire starts and import the Tom Select stylesheet:
 
-If you need to customize the default views, you can publish them:
+```js
+// resources/js/app.js
+import '../../vendor/rishadblack/wire-tomselect/resources/js/wire-tomselect-all.js';
+```
+
+```css
+/* resources/css/app.css */
+@import 'tom-select/dist/css/tom-select.css';
+```
+
+The script registers the `wireTomselect` Alpine component on `alpine:init`. Nothing else is needed in the browser.
+
+Optionally publish the config or the view:
 
 ```bash
+php artisan vendor:publish --tag=wire-tomselect-config
 php artisan vendor:publish --tag=wire-tomselect-views
 ```
 
-This will publish the `wire-tomselect::search` view to your `resources/views/vendor` directory.
-
----
-
 ## Usage
 
-### Step 1: Extend the `SearchComponent`
+### 1. Create a dropdown component
 
-To create your searchable dropdown component, extend the abstract `SearchComponent` class and define the required `builder` and `configure` methods.
+Extend `SearchComponent` instead of `Livewire\Component`. The package provides the view.
 
 ```php
-namespace App\Http\Livewire;
+namespace App\Livewire\Selects;
 
-use Rishadblack\WireTomselect\SearchComponent;
 use App\Models\User;
-
-class UserSearch extends SearchComponent
-{
-    public function builder(): Builder
-    {
-        return User::query(); // Base query for fetching data
-    }
-
-    public function configure(): void
-    {
-        $this->isSearchable();
-        $this->setSearchField(['name', 'email']); // Fields to search in
-    }
-}
-```
-
-### Step 2: Use the Component in a Blade File
-
-Include your component in a Blade file as follows:
-
-```blade
-<livewire:user-search />
-```
-
----
-
-## Customization
-
-### Configure Fields
-
-- **Value Field**: Field used for the dropdown value (default: `id`).
-- **Label Field**: Field used for the dropdown label (default: `name`).
-
-Set these fields in your `configure` method:
-
-```php
-$this->setValueField('id');
-$this->setLabelField('name');
-```
-
-### Search Fields
-
-Specify the fields for performing searches using:
-
-```php
-$this->setSearchField(['name', 'email']);
-```
-
-### Maximum Options
-
-Set the maximum number of options to display using:
-
-```php
-$this->setMaxOptions(10);
-```
-
----
-
-## Example
-
-Here’s a complete example for creating a searchable product dropdown:
-
-```php
-namespace App\Http\Livewire;
-
+use Illuminate\Database\Eloquent\Builder;
 use Rishadblack\WireTomselect\SearchComponent;
-use App\Models\Product;
 
-class ProductSearch extends SearchComponent
+class UserSelect extends SearchComponent
 {
     public function builder(): Builder
     {
-        return Product::query();
+        return User::query()->where('is_active', true);
     }
 
     public function configure(): void
     {
         $this->isSearchable();
-        $this->setSearchField(['name', 'sku']);
-        $this->setMaxOptions(15);
+        $this->setSearchField(['name', 'email']);
+        $this->setMaxOptions(25);
     }
 }
 ```
 
-In your Blade template:
+### 2. Render it
 
 ```blade
-<livewire:product-search />
+<livewire:selects.user-select wire:model="user_id" label="Assignee" />
 ```
 
----
+The selected value is `#[Modelable]`, so bind it with `wire:model` from the parent. The dropdown's `name` defaults to the bound property; pass `name` only when there is no `wire:model` or the key must differ.
 
-## Contributing
+## Configuration
 
-Contributions are welcome! Please follow these steps:
+Call these inside `configure()`:
 
-1. Fork the repository.
-2. Create a feature branch.
-3. Submit a pull request with a detailed description of your changes.
+| Method | Default | Purpose |
+|---|---|---|
+| `isSearchable()` | off | Server-side search while the user types. |
+| `setSearchField(array $fields)` | `['name']` | Columns matched with `LIKE %term%`, combined with OR. |
+| `setValueField(string $field)` | `id` | Column used as the option value. |
+| `setLabelField(string $field)` | `name` | Column used as the label and the default `ORDER BY`. |
+| `setMaxOptions(int $max)` | config `max_options` (20) | Options loaded per request. Always capped by config `max_options_limit` (100). |
+| `showRemoveButton()` | off | Shows a "×" button on a single select. |
 
----
+Table-prefixed names (`users.name`) are used as-is in SQL, and only the last segment is read from the model, which makes joins work.
+
+`builder()` is the only authorization boundary: whatever it returns can be listed and searched by anyone who can load the page, so scope it to the current user or tenant on shared tables. Eager load any relation that `map()` reads.
+
+Override `map()` to build labels from several columns (items must use the keys `id` and `name`), and `search()` to replace the default `LIKE` matching.
+
+`config/wire-tomselect.php`:
+
+```php
+return [
+    'max_options' => 20,        // default limit
+    'max_options_limit' => 100, // hard ceiling for every dropdown
+    'load_throttle' => 300,     // ms to wait after the last keystroke
+    'min_search_length' => 1,   // characters required before searching
+];
+```
+
+## Blade attributes
+
+| Attribute | Purpose |
+|---|---|
+| `name` | Defaults to the `wire:model` property. Builds the DOM id and targets updates, resets and validation errors. |
+| `label`, `label_class`, `class` | Label text and extra CSS classes. The label is omitted when empty. |
+| `placeholder` | Defaults to "Type to select {label}". |
+| `multiple` | Multiple selection. Bind `wire:model` to an array. |
+| `disabled` | Disables the field. |
+| `max_options` | Overrides the limit for this instance (still capped by the config ceiling). |
+| `create_event` | Event dispatched with `{ text }` when the user types a value that does not exist. |
+| `create_load_component` | `"action,component"` dispatched through `loadComponent` to open a creation form. |
+
+## Dependent dropdowns
+
+Add `#[Reactive]` properties and use them in `builder()`. When the parent changes the value, the options are reloaded during the same request and swapped in the browser.
+
+```php
+class CitySelect extends SearchComponent
+{
+    #[Reactive]
+    public ?int $country_id = null;
+
+    public function builder(): Builder
+    {
+        return City::query()->where('country_id', $this->country_id);
+    }
+
+    public function configure(): void
+    {
+        $this->isSearchable();
+    }
+}
+```
+
+```blade
+<livewire:selects.country-select wire:model.live="country_id" label="Country" />
+<livewire:selects.city-select wire:model="city_id" label="City" :country_id="$country_id" />
+```
+
+## Controlling dropdowns from a parent
+
+Assigning the bound property is enough. The dropdown re-renders in the same request, loads the value if it is not among the loaded options, and selects it:
+
+```php
+public function prefill(Customer $customer): void
+{
+    $this->customer_id = $customer->id;
+}
+```
+
+Use the `WithTomselect` trait to clear dropdowns, or to select a value with a label you already have:
+
+```php
+use Rishadblack\WireTomselect\Traits\WithTomselect;
+
+class EditOrder extends Component
+{
+    use WithTomselect;
+
+    public function prefill(Customer $customer): void
+    {
+        $this->customer_id = $customer->id;
+
+        $this->tomSelectUpdate([
+            'customer_id' => ['value' => $customer->id, 'options' => ['id' => $customer->id, 'name' => $customer->name]],
+        ]);
+    }
+
+    public function resetForm(): void
+    {
+        $this->reset('customer_id', 'city_id');
+        $this->tomSelectReset(['customer_id', 'city_id']); // tomSelectReset() clears every dropdown
+    }
+}
+```
+
+
+## Creating options from the dropdown
+
+Pass `create_event="customer-create"` and handle it:
+
+```php
+#[On('customer-create')]
+public function createCustomer(string $text): void
+{
+    $customer = Customer::create(['name' => $text]);
+
+    $this->tomSelectUpdate([
+        'customer_id' => ['value' => $customer->id, 'options' => ['id' => $customer->id, 'name' => $customer->name]],
+    ]);
+}
+```
+
+Or pass `create_load_component="open,customers.create-modal"`. The dropdown dispatches `loadComponent` with `action`, `component` and `data` (`text`, `field_name`, `extra`). In the modal component, use `WithTomselect`: `mountWithTomselect()` prefills `$name` (or calls your `tomSelectText()`), and `tomSelectRemoteUpdate($id, $name)` selects the new record in the dropdown that opened the modal.
+
+## Validation errors
+
+The dropdown shows an error under the field when an `alert` event with this shape is dispatched:
+
+```php
+$this->dispatch('alert', type: 'error', data: ['validation_errors' => $validator->errors()->toArray()]);
+```
+
+## Testing
+
+```php
+$component = Livewire::test(UserSelect::class, ['name' => 'user_id'])->call('searchBuilder', 'jane@');
+
+expect($component->get('data'))->toHaveCount(1);
+
+Livewire::test(EditOrder::class)
+    ->call('resetForm')
+    ->assertDispatched('tom_select_set_reset', fields: ['customer_id', 'city_id']);
+```
+
+## Upgrading from 1.x
+
+See [changelog.md](changelog.md). The main points: configuration properties are locked, the option limit always applies and is capped, events carry a named `fields` payload, the facade is gone, and the per-field `{select_id}_set_*` browser events were removed.
 
 ## License
 
-This package is open-sourced software licensed under the [MIT license](LICENSE).
-
----
-
-Feel free to adapt this documentation based on your repository's specific needs!
+MIT. See [LICENSE](LICENSE).
