@@ -36,13 +36,26 @@ document.addEventListener('alpine:init', () => {
         select: null,
         error: null,
         syncToken: 0,
+        defaultOptions: [],
+        searched: false,
 
         init() {
+            this.defaultOptions = plain(this.$wire.data);
             this.select = new TomSelect(this.$refs.select, this.settings());
 
             this.select.on('change', () => {
                 this.error = null;
             });
+
+            if (config.searchable) {
+                // Back to the default list once the search text is gone or the dropdown closes.
+                this.select.on('type', (text) => {
+                    if (!text) {
+                        this.restoreDefaults();
+                    }
+                });
+                this.select.on('dropdown_close', () => this.restoreDefaults());
+            }
 
             this.applyValue(this.$wire.value, true);
 
@@ -56,7 +69,10 @@ document.addEventListener('alpine:init', () => {
             this.$wire.$watch('value', (value) => this.syncValue(value));
 
             config.reactiveProps.forEach((prop) => {
-                this.$wire.$watch(prop, () => this.replaceOptions(plain(this.$wire.data)));
+                this.$wire.$watch(prop, () => {
+                    this.defaultOptions = plain(this.$wire.data);
+                    this.replaceOptions(this.defaultOptions);
+                });
             });
         },
 
@@ -77,14 +93,27 @@ document.addEventListener('alpine:init', () => {
                 shouldLoad: (query) => config.searchable && query.length >= config.minSearchLength,
                 load: (query, callback) => {
                     this.$wire.searchBuilder(query)
-                        .then((options) => callback(options))
+                        .then((options) => {
+                            // Show exactly what the server matched: drop the previous
+                            // options (selected ones are kept) and add the results.
+                            this.searched = true;
+                            this.select.clearOptions();
+                            callback(options);
+                        })
                         .catch(() => callback());
                 },
                 render: {
-                    option: (item, escape) => `<div class="py-1"><span class="text-muted">${escape(item.name)}</span></div>`,
-                    item: (item, escape) => `<div>${escape(item.name)}</div>`,
+                    // "html" and "item_html" come from map() and are trusted server output.
+                    option: (item, escape) => item.html ?? `<div class="py-1"><span class="text-muted">${escape(item.name)}</span></div>`,
+                    item: (item, escape) => item.item_html ?? `<div>${escape(item.name)}</div>`,
                 },
             };
+
+            if (config.searchable) {
+                // The server decides what matches (it may search columns that are not
+                // part of the label), so do not filter the results again by name.
+                settings.score = () => () => 1;
+            }
 
             if (config.createEvent || config.createLoad.length) {
                 settings.create = (input) => {
@@ -179,8 +208,20 @@ document.addEventListener('alpine:init', () => {
         },
 
         /**
-         * A reactive prop changed and the server re-rendered with fresh options.
-         * clearOptions() also forgets cached searches, so retyping a term reloads.
+         * Put the default (unsearched) list back after a remote search.
+         */
+        restoreDefaults() {
+            if (!this.searched) {
+                return;
+            }
+
+            this.searched = false;
+            this.replaceOptions(this.defaultOptions);
+        },
+
+        /**
+         * Swap the option list. clearOptions() keeps selected options and forgets
+         * cached searches, so retyping a term reloads.
          */
         replaceOptions(options) {
             this.select.clearOptions();

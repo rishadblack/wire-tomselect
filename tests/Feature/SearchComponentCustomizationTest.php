@@ -6,6 +6,7 @@ use Rishadblack\WireTomselect\Tests\Fixtures\EmailValueSelect;
 use Rishadblack\WireTomselect\Tests\Fixtures\Post;
 use Rishadblack\WireTomselect\Tests\Fixtures\PostSelect;
 use Rishadblack\WireTomselect\Tests\Fixtures\RankedSelect;
+use Rishadblack\WireTomselect\Tests\Fixtures\RichUserSelect;
 use Rishadblack\WireTomselect\Tests\Fixtures\User;
 
 it('uses the overridden map for labels', function () {
@@ -24,6 +25,34 @@ it('uses the overridden search instead of the default like query', function () {
         ->call('searchBuilder', 'Amy');
 
     expect(collect($component->get('data'))->pluck('name')->all())->toBe(['Amy Pond <amy@example.com>']);
+});
+
+it('passes rendered html through to the option while keeping a plain label', function () {
+    User::create(['name' => 'Amy', 'email' => 'amy@example.com']);
+
+    $component = Livewire::test(RichUserSelect::class, ['name' => 'user_id']);
+
+    expect($component->get('data.0.name'))->toBe('Amy')
+        ->and(trim($component->get('data.0.html')))->toBe('<div class="row"><strong>Amy</strong> <span>amy@example.com</span></div>');
+});
+
+it('escapes model values inside the rendered option html', function () {
+    User::create(['name' => '<b>Amy</b>', 'email' => 'amy@example.com']);
+
+    $component = Livewire::test(RichUserSelect::class, ['name' => 'user_id']);
+
+    expect($component->get('data.0.html'))->toContain('&lt;b&gt;Amy&lt;/b&gt;')
+        ->not->toContain('<b>Amy</b>');
+});
+
+it('finds options by a column that is not part of the label', function () {
+    User::create(['name' => 'Amy', 'email' => 'amy@example.com']);
+    User::create(['name' => 'Bob', 'email' => 'bob@example.com']);
+
+    $component = Livewire::test(RichUserSelect::class, ['name' => 'user_id'])
+        ->call('searchBuilder', 'bob@');
+
+    expect(collect($component->get('data'))->pluck('name')->all())->toBe(['Bob']);
 });
 
 it('uses the configured value field as the option id', function () {

@@ -136,6 +136,16 @@ abstract class SearchComponent extends Component
     }
 
     /**
+     * Render a Blade view to use as an option's "html" (or "item_html") key in map().
+     *
+     * @param  array<string, mixed>  $data
+     */
+    protected function optionHtml(string $view, array $data = []): string
+    {
+        return view($view, $data)->render();
+    }
+
+    /**
      * Replace the default LIKE search. Override for scopes, full-text search or relations.
      */
     public function search(Builder $query, string $search): Builder

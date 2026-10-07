@@ -93,6 +93,8 @@ Table-prefixed names (`users.name`) are used as-is in SQL, and only the last seg
 
 Override `map()` to build labels from several columns (items must use the keys `id` and `name`), and `search()` to replace the default `LIKE` matching.
 
+For rich rows, add an `html` key (and optionally `item_html` for the selected item) rendered from a Blade view with `$this->optionHtml('selects.user-option', ['user' => $user])`. Blade escapes the values; the browser inserts the HTML as-is. Search is driven by `setSearchField()`, so a name-only label still finds rows by email, and the browser shows exactly what the server returned.
+
 `config/wire-tomselect.php`:
 
 ```php

@@ -28,6 +28,9 @@ All notable changes to `rishadblack/wire-tomselect` are documented in this file.
 
 ### Added
 
+- Rich option markup: `map()` items may carry `html` and `item_html` keys, rendered server-side (helper: `optionHtml()`), which the dropdown inserts instead of the escaped `name`.
+- In searchable mode the browser no longer re-filters server results by `name`, so columns outside the label (such as email) are searchable. The default list is restored when the search text is cleared or the dropdown closes.
+
 - `name` is optional when the dropdown is bound with `wire:model`; it defaults to the bound property.
 - Assigning the bound property from a parent now selects the value without `tomSelectUpdate()`. The dropdown reloads its options in the same request when the value is not loaded yet, and the browser falls back to one `baseMapWithIds()` call only if needed.
 - `config/wire-tomselect.php` with `max_options`, `max_options_limit`, `load_throttle`, and `min_search_length`.

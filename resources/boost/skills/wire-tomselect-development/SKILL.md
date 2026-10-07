@@ -131,6 +131,34 @@ public function map(Collection $collection): array
 }
 ```
 
+### Rich option markup
+
+Add an `html` key to each item to control how the row looks in the dropdown, and an optional `item_html` key for the selected item. Render them from a Blade view with `optionHtml()`, so Blade escapes every model value. The browser inserts this HTML as-is, so never build it from unescaped strings. `name` is still required: it is the fallback text, the client-side search text for non-searchable dropdowns, and what tests read.
+
+```php
+public function map(Collection $collection): array
+{
+    return $collection->map(fn (User $user): array => [
+        'id' => $user->id,
+        'name' => $user->name,
+        'html' => $this->optionHtml('selects.user-option', ['user' => $user]),
+    ])->all();
+}
+```
+
+```blade
+{{-- resources/views/selects/user-option.blade.php --}}
+<div class="d-flex align-items-center py-1">
+    <img src="{{ $user->avatar }}" class="rounded-circle me-2" width="32" height="32" alt="">
+    <div>
+        <div class="fw-semibold">{{ $user->name }}</div>
+        <div class="small text-muted">{{ $user->email }}</div>
+    </div>
+</div>
+```
+
+Searching does not depend on the label. `setSearchField()` decides which columns the server matches, so a dropdown labelled with the name alone still finds users by email. In searchable mode the browser shows exactly what the server returned and does not filter again by `name`; it only falls back to the default list when the search text is cleared.
+
 Override `search()` to replace the default `LIKE` matching, for example to use scopes, full-text search, or relationships:
 
 ```php
