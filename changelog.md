@@ -2,6 +2,12 @@
 
 All notable changes to `rishadblack/wire-tomselect` are documented in this file.
 
+## 2.0.2 - 2026-10-08
+
+### Changed
+
+- Dependencies refreshed and tested on PHP 8.4 (Symfony 8.1 components). No package code changes.
+
 ## 2.0.1 - 2026-10-07
 
 ### Fixed
