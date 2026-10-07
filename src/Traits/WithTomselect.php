@@ -7,12 +7,11 @@ trait WithTomselect
     /**
      * Initialize the tom select component with remote data.
      *
-     * @param array $data
      * @return void
      */
     public function mountWithTomselect(array $data = [])
     {
-        if (isset($data['data']['text']) && !empty($data['data']['text'])) {
+        if (isset($data['data']['text']) && ! empty($data['data']['text'])) {
             session()->put('tom_select_remote', $data['data']);
 
             if (property_exists($this, 'name')) {
@@ -28,17 +27,13 @@ trait WithTomselect
 
     /**
      * Handle remote updates for tom select component.
-     *
-     * @param string|int $id
-     * @param string $name
-     * @return bool
      */
-    public function tomSelectRemoteUpdate(string | int $id, string $name): bool
+    public function tomSelectRemoteUpdate(string|int $id, string $name): bool
     {
         $remoteData = session()->get('tom_select_remote');
         $fieldName = $remoteData['field_name'] ?? null;
 
-        if (!$fieldName) {
+        if (! $fieldName) {
             return true; // Early exit if no field name is found
         }
 
@@ -59,9 +54,6 @@ trait WithTomselect
 
     /**
      * Update the tom select component with given options.
-     *
-     * @param array $options
-     * @return void
      */
     public function tomSelectUpdate(array $options): void
     {
@@ -70,11 +62,8 @@ trait WithTomselect
 
     /**
      * Reset the tom select component for specified fields.
-     *
-     * @param array|string $options
-     * @return void
      */
-    public function tomSelectReset(array | string $options = []): void
+    public function tomSelectReset(array|string $options = []): void
     {
         $options = is_array($options) ? $options : [$options]; // Normalize to an array
         $this->dispatch('tom_select_set_reset', $options);

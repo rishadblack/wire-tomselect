@@ -8,8 +8,6 @@ class WireTomselectServiceProvider extends ServiceProvider
 {
     /**
      * Perform post-registration booting of services.
-     *
-     * @return void
      */
     public function boot(): void
     {
@@ -26,12 +24,10 @@ class WireTomselectServiceProvider extends ServiceProvider
 
     /**
      * Register any package services.
-     *
-     * @return void
      */
     public function register(): void
     {
-        $this->mergeConfigFrom(__DIR__ . '/../config/wire-tomselect.php', 'wire-tomselect');
+        $this->mergeConfigFrom(__DIR__.'/../config/wire-tomselect.php', 'wire-tomselect');
 
         // Register the service the package provides.
         $this->app->singleton('wire-tomselect', function ($app) {
@@ -39,7 +35,7 @@ class WireTomselectServiceProvider extends ServiceProvider
         });
 
         // Load views from package
-        $this->loadViewsFrom(__DIR__ . '/../resources/views', 'wire-tomselect');
+        $this->loadViewsFrom(__DIR__.'/../resources/views', 'wire-tomselect');
     }
 
     /**
@@ -54,19 +50,17 @@ class WireTomselectServiceProvider extends ServiceProvider
 
     /**
      * Console-specific booting.
-     *
-     * @return void
      */
     protected function bootForConsole(): void
     {
         // Publishing the configuration file.
         $this->publishes([
-            __DIR__ . '/../config/wire-tomselect.php' => config_path('wire-tomselect.php'),
+            __DIR__.'/../config/wire-tomselect.php' => config_path('wire-tomselect.php'),
         ], 'wire-tomselect.config');
 
         // Publish views
         $this->publishes([
-            __DIR__ . '/../resources/views' => resource_path('views/vendor/wire-tomselect'),
+            __DIR__.'/../resources/views' => resource_path('views/vendor/wire-tomselect'),
         ], 'views');
 
         // Publishing the views.
