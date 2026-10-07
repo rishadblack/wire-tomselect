@@ -64,20 +64,24 @@ trait WithTomselect
      * Set dropdown values. Keys are dropdown names; values are either a plain value
      * or ['value' => ..., 'options' => ['id' => ..., 'name' => ...]].
      *
-     * @param  array<string, mixed>  $fields
+     * The parameter keeps its 1.x name so named-argument calls still work.
+     *
+     * @param  array<string, mixed>  $options
      */
-    public function tomSelectUpdate(array $fields): void
+    public function tomSelectUpdate(array $options): void
     {
-        $this->dispatch('tom_select_set_value', fields: $fields);
+        $this->dispatch('tom_select_set_value', fields: $options);
     }
 
     /**
      * Clear the given dropdowns, or every dropdown when called without arguments.
      *
-     * @param  array<int, string>|string  $fields
+     * The parameter keeps its 1.x name so named-argument calls still work.
+     *
+     * @param  array<int, string>|string  $options
      */
-    public function tomSelectReset(array|string $fields = []): void
+    public function tomSelectReset(array|string $options = []): void
     {
-        $this->dispatch('tom_select_set_reset', fields: array_values((array) $fields));
+        $this->dispatch('tom_select_set_reset', fields: array_values((array) $options));
     }
 }

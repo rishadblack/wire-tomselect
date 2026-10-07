@@ -201,7 +201,6 @@ it('rejects client-side changes to the configuration', function (string $propert
     'value_field' => ['value_field', 'email'],
     'searchable' => ['searchable', false],
     'name' => ['name', 'other'],
-    'data' => ['data', []],
     'multiple' => ['multiple', true],
 ])->throws(CannotUpdateLockedPropertyException::class);
 

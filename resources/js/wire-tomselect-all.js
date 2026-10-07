@@ -6,6 +6,10 @@ import TomSelect from 'tom-select';
  */
 const pendingValues = new Map();
 
+// 1.x globals, read by views published from 1.x.
+window.TomSelect = TomSelect;
+window.tom_select_set_value = window.tom_select_set_value ?? {};
+
 const fieldsFrom = (event) => {
     const detail = event?.detail;
 
@@ -28,6 +32,7 @@ const plain = (value) => (value === undefined || value === null ? [] : JSON.pars
 window.addEventListener('tom_select_set_value', (event) => {
     Object.entries(fieldsFrom(event) ?? {}).forEach(([name, payload]) => {
         pendingValues.set(name, payload);
+        window.tom_select_set_value[name] = payload;
     });
 });
 
@@ -263,6 +268,35 @@ document.addEventListener('alpine:init', () => {
             if (names.length === 0 || names.includes(config.name)) {
                 this.applyValue(null);
             }
+        },
+
+        /*
+         * 1.x per-field events: {select_id}_set_value, _set_option and _set_reset.
+         * Kept for apps that dispatch them directly; prefer the trait helpers.
+         */
+        legacyPayload(event) {
+            const detail = event?.detail;
+
+            return Array.isArray(detail) ? detail[0] : detail;
+        },
+
+        onLegacySetValue(event) {
+            const payload = this.legacyPayload(event);
+
+            this.select.clear(true);
+            this.applyValue(payload === undefined ? this.$wire.value : payload);
+        },
+
+        onLegacySetOption(event) {
+            const payload = this.legacyPayload(event);
+
+            this.select.clear(true);
+            this.replaceOptions(plain(payload === undefined ? this.$wire.data : [].concat(payload)));
+        },
+
+        onLegacyReset() {
+            this.select.clear(true);
+            this.applyValue(this.$wire.value);
         },
 
         onAlert(event) {

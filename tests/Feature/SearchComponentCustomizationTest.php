@@ -3,6 +3,7 @@
 use Livewire\Livewire;
 use Rishadblack\WireTomselect\Tests\Fixtures\CustomUserSelect;
 use Rishadblack\WireTomselect\Tests\Fixtures\EmailValueSelect;
+use Rishadblack\WireTomselect\Tests\Fixtures\LegacySearchSelect;
 use Rishadblack\WireTomselect\Tests\Fixtures\Post;
 use Rishadblack\WireTomselect\Tests\Fixtures\PostSelect;
 use Rishadblack\WireTomselect\Tests\Fixtures\RankedSelect;
@@ -53,6 +54,34 @@ it('finds options by a column that is not part of the label', function () {
         ->call('searchBuilder', 'bob@');
 
     expect(collect($component->get('data'))->pluck('name')->all())->toBe(['Bob']);
+});
+
+it('runs a search override written without a return type', function () {
+    User::create(['name' => 'Amy', 'email' => 'amy@example.com']);
+    User::create(['name' => 'Bob', 'email' => 'bob@example.com']);
+
+    $component = Livewire::test(LegacySearchSelect::class, ['name' => 'user_id'])
+        ->call('searchBuilder', 'bob');
+
+    expect(collect($component->get('data'))->pluck('name')->all())->toBe(['Bob']);
+});
+
+it('trims long search terms before they reach a search override', function () {
+    Livewire::test(LegacySearchSelect::class, ['name' => 'user_id'])
+        ->call('searchBuilder', str_repeat('a', 5000));
+
+    expect(LegacySearchSelect::$receivedSearch)->toHaveLength(LegacySearchSelect::MAX_SEARCH_LENGTH);
+});
+
+it('does not call the search override for a blank term', function () {
+    LegacySearchSelect::$receivedSearch = null;
+    User::create(['name' => 'Amy', 'email' => 'amy@example.com']);
+
+    $component = Livewire::test(LegacySearchSelect::class, ['name' => 'user_id'])
+        ->call('searchBuilder', '');
+
+    expect(LegacySearchSelect::$receivedSearch)->toBeNull()
+        ->and($component->get('data'))->toHaveCount(1);
 });
 
 it('uses the configured value field as the option id', function () {

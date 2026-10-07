@@ -641,16 +641,25 @@ Edit `resources/views/vendor/wire-tomselect/search.blade.php`. Keep the `x-data`
 
 ## Upgrading from 1.x
 
-Version 2 is a rewrite of the browser side and tightens security. Most apps need only these changes:
+Upgrade to 2.0.1 or later. It runs 1.x code unchanged, including subclasses that redeclare properties (`public $max_options = 50;`), overrides without return types (`search()`, `mount()`, `render()`, `baseMap()`), code that reads `$this->search_query` or calls `baseSelectId()`, views published from 1.x, and the per-field browser events.
 
-1. **Republish the view if you published it.** All JavaScript moved from the view into the package script, whose import path is unchanged. A published 1.x view still contains the old inline script, so publish it again and re-apply your changes.
+Only two things need attention:
+
+1. **Remove the facade.** The empty `WireTomselect` facade and class are gone.
 2. **Update event assertions in tests.** `tomSelectUpdate()` and `tomSelectReset()` now send a named `fields` payload: `->assertDispatched('tom_select_set_reset', fields: ['city_id'])`.
-3. **Remove the facade.** The empty `WireTomselect` facade and class are gone.
-4. **Drop the per-field browser events.** The undocumented `{select_id}_set_option`, `{select_id}_set_value` and `{select_id}_set_reset` events were removed. Assign the property or use the trait instead.
-5. **Check option counts.** The limit now applies to non-searchable dropdowns too, capped at 100 by default.
-6. **Rename publish tags.** Use `wire-tomselect-config` and `wire-tomselect-views`.
 
-You can now also simplify existing code: drop `name` where it equals the `wire:model` property, and replace `tomSelectUpdate()` with a plain property assignment where the query can find the value.
+Two behaviours changed on purpose:
+
+- The option limit now applies to non-searchable dropdowns too, capped at 100 by default.
+- Configuration properties are locked against changes from the browser.
+
+Once upgraded, move to the 2.x style at your own pace:
+
+- **Republish the view** if you published it. A 1.x view keeps working, but it carries the old inline script and misses the Alpine component, rich rows and the security fixes in the browser.
+- **Drop `name`** where it equals the `wire:model` property.
+- **Replace `tomSelectUpdate()`** with a plain property assignment where the query can find the value.
+- **Replace the per-field events** (`{select_id}_set_value`, `_set_option`, `_set_reset`) with property assignments and `tomSelectReset()`. They still work but are deprecated.
+- **Use the new publish tags**: `wire-tomselect-config` and `wire-tomselect-views`.
 
 See [changelog.md](changelog.md) for the full list.
 

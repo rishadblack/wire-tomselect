@@ -40,69 +40,115 @@ abstract class SearchComponent extends Component
      */
     protected static array $reactivePropertyCache = [];
 
-    /** The selected value. Bound to the parent with wire:model. */
-    #[Modelable]
-    public mixed $value = null;
+    /*
+     * The properties below are untyped on purpose. 1.x subclasses commonly redeclare
+     * them (public $max_options = 50;), and PHP forbids an untyped redeclaration of a
+     * typed property. The types are documented in the docblocks instead.
+     */
 
     /**
-     * The options currently loaded for the dropdown.
+     * The selected value. Bound to the parent with wire:model.
      *
-     * @var array<int, array{id: mixed, name: mixed}>
+     * @var mixed
+     */
+    #[Modelable]
+    public $value;
+
+    /**
+     * The options currently loaded for the dropdown. Not locked: the 1.x inline
+     * script (in published views) writes it back, and nothing on the server trusts it.
+     *
+     * @var array<int, array{id: mixed, name: mixed}>|null
+     */
+    public $data = [];
+
+    /**
+     * Unique field name. Defaults to the parent's wire:model property. Builds the DOM id and targets events.
+     *
+     * @var string|null
      */
     #[Locked]
-    public array $data = [];
+    public $name;
 
-    /** Unique field name. Defaults to the parent's wire:model property. Builds the DOM id and targets events. */
+    /**
+     * DOM-safe id derived from the name.
+     *
+     * @var string|null
+     */
     #[Locked]
-    public string $name = '';
+    public $select_id;
 
-    /** DOM-safe id derived from the name. */
+    /** @var string|null */
     #[Locked]
-    public string $select_id = '';
+    public $label;
 
+    /** @var string|null */
     #[Locked]
-    public ?string $label = null;
+    public $label_class;
 
+    /** @var string|null */
     #[Locked]
-    public ?string $label_class = null;
+    public $class;
 
+    /** @var string|null */
     #[Locked]
-    public ?string $class = null;
+    public $placeholder;
 
+    /** @var bool|string */
     #[Locked]
-    public ?string $placeholder = null;
+    public $disabled = false;
 
+    /** @var bool|string */
     #[Locked]
-    public bool|string $disabled = false;
+    public $multiple = false;
 
+    /** @var bool */
     #[Locked]
-    public bool|string $multiple = false;
+    public $searchable = false;
 
+    /** @var bool */
     #[Locked]
-    public bool $searchable = false;
+    public $is_remove_button = false;
 
+    /**
+     * Maximum number of options loaded per request. 0 means "use the config default".
+     *
+     * @var int|string
+     */
     #[Locked]
-    public bool $is_remove_button = false;
+    public $max_options = 0;
 
-    /** Maximum number of options loaded per request. 0 means "use the config default". */
+    /**
+     * The term of the search being run. Readable from builder(), as in 1.x.
+     *
+     * @var string|null
+     */
     #[Locked]
-    public int $max_options = 0;
+    public $search_query;
 
     /** Limit passed as a Blade attribute. Wins over setMaxOptions() for this instance. */
     #[Locked]
     public int $max_options_override = 0;
 
-    /** Event dispatched with the typed text when the user creates a new option. */
+    /**
+     * Event dispatched with the typed text when the user creates a new option.
+     *
+     * @var string|null
+     */
     #[Locked]
-    public ?string $create_event = null;
+    public $create_event;
 
-    /** "action,component" pair dispatched through the loadComponent event. */
+    /**
+     * "action,component" pair dispatched through the loadComponent event.
+     *
+     * @var string|null
+     */
     #[Locked]
-    public ?string $create_load_component = null;
+    public $create_load_component;
 
     /** @var array<int, string> */
     #[Locked]
-    public array $create_load = [];
+    public $create_load = [];
 
     /** Fingerprint of the reactive props used to render the current options. */
     #[Locked]
@@ -147,11 +193,15 @@ abstract class SearchComponent extends Component
 
     /**
      * Replace the default LIKE search. Override for scopes, full-text search or relations.
+     *
+     * The return type is declared in the docblock only, so overrides written for 1.x
+     * without ": Builder" stay compatible. Overrides may add ": Builder" freely.
+     * The term arrives already trimmed to MAX_SEARCH_LENGTH characters.
+     *
+     * @return Builder
      */
-    public function search(Builder $query, string $search): Builder
+    public function search(Builder $query, string $search)
     {
-        $search = mb_substr($search, 0, static::MAX_SEARCH_LENGTH);
-
         return $query->where(function (Builder $query) use ($search): void {
             foreach ($this->getSearchField() as $field) {
                 $query->orWhere($field, 'like', "%{$search}%");
@@ -159,20 +209,30 @@ abstract class SearchComponent extends Component
         });
     }
 
-    public function mount(): void
+    /**
+     * No return type, so 1.x overrides without one stay compatible.
+     *
+     * @return void
+     */
+    public function mount()
     {
         $this->disabled = $this->toBoolean($this->disabled);
         $this->multiple = $this->toBoolean($this->multiple);
-        $this->max_options_override = max(0, $this->max_options);
+        $this->max_options_override = max(0, (int) $this->max_options);
         $this->create_load = $this->create_load_component
-            ? array_map('trim', explode(',', $this->create_load_component))
+            ? array_map('trim', explode(',', (string) $this->create_load_component))
             : [];
         $this->reactive_signature = $this->reactiveSignature();
 
-        $this->data = $this->loadOptions(null, $this->selectedIds());
+        $this->loadSelectedOptions();
     }
 
-    public function render(): View
+    /**
+     * No return type, so 1.x overrides without one stay compatible.
+     *
+     * @return View
+     */
+    public function render()
     {
         $this->resolveName();
         $this->applyConfiguration();
@@ -184,12 +244,22 @@ abstract class SearchComponent extends Component
         // as the parent's update, so the browser needs no extra round trip.
         if ($this->reactive_signature !== $signature || ! $this->hasOptionsForSelectedIds()) {
             $this->reactive_signature = $signature;
-            $this->data = $this->loadOptions(null, $this->selectedIds());
+            $this->loadSelectedOptions();
         }
 
         return view('wire-tomselect::search', [
             'tomselect_config' => $this->tomselectConfig(),
+            // Read by views published from 1.x.
+            'reactive_props' => $this->getReactiveProps(),
         ]);
+    }
+
+    /**
+     * Generate the DOM-safe select id from the name (1.x API).
+     */
+    public function baseSelectId(): void
+    {
+        $this->select_id = Str::replace('.', '_', (string) $this->name);
     }
 
     /**
@@ -200,7 +270,7 @@ abstract class SearchComponent extends Component
     #[Renderless]
     public function searchBuilder(?string $search = null): array
     {
-        return $this->data = $this->loadOptions($search);
+        return $this->baseMap($search);
     }
 
     /**
@@ -276,12 +346,14 @@ abstract class SearchComponent extends Component
      */
     protected function loadOptions(?string $search = null, array $ids = []): array
     {
+        $this->search_query = filled($search) ? mb_substr($search, 0, static::MAX_SEARCH_LENGTH) : null;
+
         $this->applyConfiguration();
 
         $query = $this->baseBuilder();
 
         if ($this->searchable && filled($search)) {
-            $query = $this->search($query, $search);
+            $query = $this->search($query, $this->search_query);
         }
 
         if (! $query->getQuery()->orders) {
@@ -289,7 +361,7 @@ abstract class SearchComponent extends Component
         }
 
         if (! $query->getQuery()->limit) {
-            $query->limit($this->max_options);
+            $query->limit((int) $this->max_options);
         }
 
         $results = $query->get();
@@ -321,8 +393,8 @@ abstract class SearchComponent extends Component
         return [
             'name' => $this->name,
             'multiple' => (bool) $this->multiple,
-            'searchable' => $this->searchable,
-            'removeButton' => $this->is_remove_button || (bool) $this->multiple,
+            'searchable' => (bool) $this->searchable,
+            'removeButton' => (bool) $this->is_remove_button || (bool) $this->multiple,
             'createEvent' => $this->create_event,
             'createLoad' => $this->create_load,
             'loadThrottle' => (int) config('wire-tomselect.load_throttle', 300),
@@ -336,17 +408,34 @@ abstract class SearchComponent extends Component
      */
     protected function resolveName(): void
     {
-        if ($this->name === '') {
+        if (blank($this->name)) {
             $bindings = store($this)->get('bindings', []);
             $this->name = (string) (array_keys($bindings)[0] ?? '');
         }
 
-        if ($this->name === '') {
+        if (blank($this->name)) {
             throw new InvalidArgumentException(sprintf('[%s] requires a unique "name" attribute or a wire:model binding.', static::class));
         }
 
-        if ($this->select_id === '') {
-            $this->select_id = Str::replace('.', '_', $this->name);
+        if (blank($this->select_id)) {
+            $this->baseSelectId();
+        }
+    }
+
+    /**
+     * Load the default options plus the selected ones, through the 1.x entry points
+     * so that subclasses overriding baseMap() or baseMapWithId() keep working.
+     */
+    protected function loadSelectedOptions(): void
+    {
+        $ids = $this->selectedIds();
+
+        if ($ids === []) {
+            $this->baseMap();
+        } elseif (is_array($this->value)) {
+            $this->baseMapWithIds($ids);
+        } else {
+            $this->baseMapWithId($ids[0]);
         }
     }
 
@@ -361,7 +450,13 @@ abstract class SearchComponent extends Component
             return true;
         }
 
-        $loaded = array_map(fn (array $option): string => (string) $option['id'], $this->data);
+        $loaded = [];
+
+        foreach (is_array($this->data) ? $this->data : [] as $option) {
+            if (is_array($option) && isset($option['id']) && is_scalar($option['id'])) {
+                $loaded[] = (string) $option['id'];
+            }
+        }
 
         foreach ($ids as $id) {
             if (! in_array((string) $id, $loaded, true)) {
@@ -382,7 +477,7 @@ abstract class SearchComponent extends Component
         $default = max(1, (int) config('wire-tomselect.max_options', 20));
         $limit = max(1, (int) config('wire-tomselect.max_options_limit', 100));
 
-        $requested = $this->max_options_override ?: ($this->max_options ?: $default);
+        $requested = $this->max_options_override ?: ((int) $this->max_options ?: $default);
 
         $this->max_options = min($requested, $limit);
     }
@@ -430,7 +525,7 @@ abstract class SearchComponent extends Component
         return md5(json_encode($values) ?: '');
     }
 
-    protected function toBoolean(bool|string $value): bool
+    protected function toBoolean(mixed $value): bool
     {
         return is_bool($value) ? $value : filter_var($value, FILTER_VALIDATE_BOOL);
     }

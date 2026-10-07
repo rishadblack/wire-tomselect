@@ -8,7 +8,10 @@
         x-data="wireTomselect(@js($tomselect_config))"
         x-on:tom_select_set_value.window="onSetValue($event)"
         x-on:tom_select_set_reset.window="onReset($event)"
-        x-on:alert.window="onAlert($event)">
+        x-on:alert.window="onAlert($event)"
+        x-on:{{ $select_id }}_set_value.window="onLegacySetValue($event)"
+        x-on:{{ $select_id }}_set_option.window="onLegacySetOption($event)"
+        x-on:{{ $select_id }}_set_reset.window="onLegacyReset()">
         <select
             x-ref="select"
             wire:model.change="value"

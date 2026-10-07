@@ -2,6 +2,26 @@
 
 All notable changes to `rishadblack/wire-tomselect` are documented in this file.
 
+## 2.0.1 - 2026-10-07
+
+### Fixed
+
+1.x code crashed or silently misbehaved on 2.0.0. All of it runs unchanged again:
+
+- Subclasses that redeclare properties without a type (`public $max_options = 50;`) no longer hit "Type of ... must be ...". Public properties are untyped again, with types in docblocks.
+- Overrides without return types of `search()`, `mount()`, `render()` and `returnNameOnly()` no longer cause "must be compatible" fatal errors.
+- Overrides of `baseMap()` and `baseMapWithId()` are honoured again on mount, re-render and search.
+- `$search_query` is available in `builder()` again, and `baseSelectId()` is back.
+- Setter overrides declared with `: self`, and `setSearchField()` called without arguments, work again.
+- Named-argument calls such as `tomSelectUpdate(options: [...])` work again.
+- Views published from 1.x render again: `$reactive_props` is passed to the view, `window.TomSelect` and `window.tom_select_set_value` are set, and `data` is no longer locked, since the 1.x inline script writes it back.
+- The per-field browser events `{select_id}_set_value`, `_set_option` and `_set_reset` work again. They are deprecated.
+- `max_options` passed as a string from Blade is cast to an integer.
+
+### Security
+
+- The 255-character cap on search terms now also applies to `search()` overrides.
+
 ## 2.0.0 - 2026-10-07
 
 ### Security
