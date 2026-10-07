@@ -2,7 +2,7 @@
 
 All notable changes to `rishadblack/wire-tomselect` are documented in this file.
 
-## 2.0.0 (unreleased)
+## 2.0.0 - 2026-10-07
 
 ### Security
 
